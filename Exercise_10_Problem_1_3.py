@@ -12,6 +12,9 @@ import pandas as pd
 # Read the data (replace "None" with your own code)
 data = None
 # YOUR CODE HERE 1 to read the data
+data = pd.read_table('shopping_centers.txt', sep=';', header=None)
+data.index.name = 'id'
+data.columns=['name', 'addr']
 
 #TEST COEE
 # Check your input data
@@ -25,6 +28,7 @@ from geopandas.tools import geocode
 
 # Geocode addresses using Nominatim. Remember to provide a custom "application name" in the user_agent parameter!
 #YOUR CODE HERE 2 for geocoding
+geo = geocode(data['addr'], provider='nominatim', user_agent='autogis_xx', timeout=4)
 
 #TEST CODE
 # Check the geocoded output
@@ -38,6 +42,7 @@ print(type(geo))
 # Check that the coordinate reference system of the geocoded result is correctly defined, and **reproject the layer into JGD2011** (EPSG:6668):
 
 # YOUR CODE HERE 3 to set crs.
+geo = geo.to_crs(CRS.from_epsg(3879))
 
 #TEST CODE
 # Check layer crs
@@ -45,7 +50,8 @@ print(geo.crs)
 
 
 # YOUR CODE HERE 4 to join the tables
-geodata = None
+#geodata = None
+geodata = geo.join(data)
 
 #TEST CODE
 # Check the join output
@@ -57,6 +63,7 @@ print(geodata.head())
 # Define output filepath
 out_fp = None
 # YOUR CODE HERE 5 to save the output
+out_fp = "data/shopping_centers.shp"
 
 # TEST CODE
 # Print info about output file
@@ -69,8 +76,10 @@ print("Geocoded output is stored in this file:", out_fp)
  
 
 # YOUR CODE HERE 6 to create a new column
+geodata['buffer']=None
 
 # YOUR CODE HERE 7 to set buffer column
+geodata['buffer'] = geodata['geometry'].buffer(distance=1500)
 
 #TEST CODE
 print(geodata.head())
@@ -88,6 +97,7 @@ print(round(gpd.GeoSeries(geodata["buffer"]).area / 1000000))
 # - Replace the values in `geometry` column with the values of `buffer` column:
 
 # YOUR CODE HERE 8 to replace the values in geometry
+geodata['geometry'] = geodata['buffer']
 
 #TEST CODE
 print(geodata.head())
@@ -100,6 +110,12 @@ print(geodata.head())
 
 # YOUR CODE HERE 9
 # Read population grid data for 2018 into a variable `pop`. 
+url = 'https://kartta.hsy.fi/geoserver/wfs'
+params = dict(service='WFS',version='2.0.0',request='GetFeature',
+              typeName='asuminen_ja_maankaytto:Vaestotietoruudukko_2018',outputFormat='json')
+r = requests.get(url, params=params)
+pop = gpd.GeoDataFrame.from_features(geojson.loads(r.content))
+
 
 #TEST CODE
 # Check your input data
@@ -112,9 +128,12 @@ print(pop.head(3))
 
 # Create a spatial join between grid layer and buffer layer. 
 # YOUR CDOE HERE 10 for spatial join
-
+join = gpd.sjoin(geodata, pop, how="inner", op="intersects")
 
 # YOUR CODE HERE 11 to report how many people live within 1.5 km distance from each shopping center
+grouped = join.groupby('name')
+for key, group in grouped:
+    print('store: ', key,"\n", 'population:', sum(group['asukkaita']))
 
 # **Reflections:**
 #     
@@ -123,5 +142,6 @@ print(pop.head(3))
 # - What was difficult?
 
 # YOUR ANSWER HERE
+#Most problems were difficult for me.
 
 # Well done!
