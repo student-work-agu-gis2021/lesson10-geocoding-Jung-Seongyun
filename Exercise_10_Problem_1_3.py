@@ -141,7 +141,7 @@ print("National Azabu :"+str(azabu_sum))
 
 # YOUR ANSWER HERE
 # Problem1:4 Problem2:5 Problem3:5
-#It was difficult because I didn't know how to make an address from problem 1.
+#Mostly everything was difficult. I needed many time to sovle from the first.
 
 #Problem1
 
